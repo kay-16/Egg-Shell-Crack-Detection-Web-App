@@ -25,4 +25,8 @@ python -m venv .venv
 source .venv/Scripts/activate
 ```
 
-
+### 4. Install dependencies
+# Run the command to install dependencies
+```bash
+pip install -r requirements.txt
+```
