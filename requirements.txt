@@ -1,0 +1,14 @@
+# Core Web App Framework
+streamlit>=1.30.0
+
+# Data Manipulation
+pandas
+numpy
+
+# Visualization (Standard for Thesis work)
+matplotlib
+seaborn
+plotly
+
+# Optional: For any Excel file reading/writing
+openpyxl
