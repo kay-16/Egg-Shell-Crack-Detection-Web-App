@@ -14,19 +14,19 @@ cd Egg-Shell-Crack-Detection-Web-App
 ```
 
 ### 2. Clone the Repository
-#  Create the environment
+Create the environment
 ```bash
 python -m venv .venv
 ```
 
 ### 3. Clone the Repository
-# Activate it (Windows Git Bash)
+Activate it (Windows Git Bash)
 ```bash
 source .venv/Scripts/activate
 ```
 
 ### 4. Install dependencies
-# Run the command to install dependencies
+Run the command to install dependencies
 ```bash
 pip install -r requirements.txt
 ```
