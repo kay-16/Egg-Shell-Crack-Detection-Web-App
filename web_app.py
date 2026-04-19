@@ -16,17 +16,54 @@ st.markdown("""
             display: none !important;
         }
             
+        /* Centers container of the button */
+        [data-testid="stFileUploaderDropzone"] {
+            display: flex !important;
+            justify-content: center !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            border: none !important;
+        }
+            
         /* Removes the Gray Background and Border */
         [data-testid="stFileUploaderDropzone"] {
             background-color: transparent !important;
             border: none !important;
             padding: 0 !important;
+        }
 
-        /* Ensures the 'Browse files' button stays visible and centered */
+        /* Ensures the 'Browse files' button itself is centered */
         [data-testid="stFileUploaderDropzone"] button {
             display: block !important;
-            margin: auto !important;
+            margin: 0 auto !important;
         }
+            
+        /* Custom audio file upload button */
+        [data-testid="stFileUploaderDropzone"] button {
+            background-color: #3772a5 !important;
+            color: white !important;
+            border: 1px solid #000000 !important; 
+            padding: 8px 20px !important;
+            margin: 0 auto !important;
+            display: block !important;
+            font-size: 0 !important; 
+            line-height: 0 !important;
+        }
+        
+        /* Custom button label */
+        [data-testid="stFileUploaderDropzone"] button::after {
+            content: "Upload Audio File" !important;
+            display: block !important;
+            font-size: 16px !important; 
+            line-height: normal !important;
+            color: white !important;
+        }
+
+        /* Ensuring no other spans inside the button show up */
+        [data-testid="stFileUploaderDropzone"] button * {
+            display: none !important;
+        }
+            
     </style>
 """, unsafe_allow_html=True)
 
@@ -39,13 +76,15 @@ st.write("[Best model name]-based EggCrack Detection")
 # Upload Logic
 audio_container = tw_wrap(st.container)(
     key="main-container",
-    classes="border-1 border-black flex justify-center"
+    classes="border-1 border-black rounded-xl p-10 flex flex-col items-center justify-center space-y-4"
 )
 with st.container(border=True, width=600, height=300):
+    # Mic Image
     st.image("assets/mic_plus.svg", width=45)
 
+    # Uploader
     audio_file = st.file_uploader(
-        "Upload audio file", 
+        "Upload Audio File",
         type=["mp3","wav","ogg"], 
         width=300, 
         max_upload_size=200,
@@ -55,13 +94,15 @@ with st.container(border=True, width=600, height=300):
     if audio_file is not None:
         st.audio(audio_file, format=f'audio/{audio_file.type.split("/")[-1]}')
 
+col1, col2, col3 = st.columns([1, 1, 1])
 
 # Detect Button
-detect_button = tw_wrap(st.button)(
-    "Detect Cracks", 
-    key="detect_action",
-    classes="w-fit bg-green-600 text-white rounded-full border-1 border-black px-6 flex justify-center place-content-center"
-    )
+with col2:
+    detect_button = tw_wrap(st.button)(
+        "Detect Cracks", 
+        key="detect_action",
+        classes="w-fit mx-auto block bg-[#7bc040] text-white rounded-full border-1 border-black px-6"
+        )
 
 if detect_button:
     st.info("Analysing audio for cracks...") # Call CNN model here for later
@@ -69,3 +110,4 @@ if detect_button:
 
 # df = pd.read_csv("data.csv")
 # st.line_chart(df)
+
