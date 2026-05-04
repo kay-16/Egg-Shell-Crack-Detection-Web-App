@@ -3,7 +3,7 @@ import pandas as pd
 import st_tailwind as tw
 from st_tailwind import tw_wrap
 
-# Removes some audio upload elements
+# Removes some audio upload elements (UI-related)
 st.markdown("""
     <style>
         /* Hides the 'Drag and drop' text */
