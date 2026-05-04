@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import st_tailwind as tw
 from st_tailwind import tw_wrap
+import time
 
 # Removes some audio upload elements (UI-related)
 st.markdown("""
@@ -74,26 +75,28 @@ tw.initialize_tailwind()
 st.write("[Best model name]-based EggCrack Detection")
 
 # Upload Logic
-audio_container = tw_wrap(st.container)(
-    key="main-container",
-    classes="border-1 border-black rounded-xl p-10 flex flex-col items-center justify-center space-y-4"
-)
-with st.container(border=True, width=600, height=300):
-    # Mic Image
-    st.image("assets/mic_plus.svg", width=45)
+if "classification_result" not in st.session_state:
+    audio_container = tw_wrap(st.container)(
+        key="main-container",
+        classes="border-1 border-black rounded-xl p-10 flex flex-col items-center justify-center space-y-4"
+    )
+    with st.container(border=True, width=600, height=300):
+        # Mic Image
+        st.image("assets/mic_plus.svg", width=45)
 
-    # Uploader
-    audio_file = st.file_uploader(
-        "Upload Audio File",
-        type=["mp3","wav","ogg"], 
-        width=300, 
-        max_upload_size=200,
-        label_visibility="collapsed")
+        # 1. Upload file (Uploader)
+        audio_file = st.file_uploader(
+            "Upload Audio File",
+            type=["mp3","wav","ogg"], 
+            width=300, 
+            max_upload_size=200,
+            label_visibility="collapsed")
 
-    # Show audio player if a file is uploaded
-    if audio_file is not None:
-        st.audio(audio_file, format=f'audio/{audio_file.type.split("/")[-1]}')
+        # 2. Show audio player if a file is uploaded (Upload done)
+        if audio_file is not None:
+            st.audio(audio_file, format=f'audio/{audio_file.type.split("/")[-1]}')
 
+            
 col1, col2, col3 = st.columns([1, 1, 1])
 
 # Detect Button
@@ -104,9 +107,17 @@ with col2:
         classes="w-fit mx-auto block bg-[#7bc040] text-white rounded-full border-1 border-black px-6"
         )
 
-if detect_button:
-    st.info("Analysing audio for cracks...") # Call CNN model here for later
+    # 3. Analyzing Audio File and Detecting Cracks
+    if detect_button:
+        with st.spinner("Analysing audio for cracks...", show_time=True):
+            time.sleep(5)
+        result="CRACKED"
+        st.success("Detection Done!")
+        st.session_state.classification_result = result
+        # st.info("Analysing audio for cracks...") # Call CNN model here for later
 
+
+# Add st.dialog for Part 4
 
 # df = pd.read_csv("data.csv")
 # st.line_chart(df)
