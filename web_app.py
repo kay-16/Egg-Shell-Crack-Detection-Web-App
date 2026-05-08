@@ -106,7 +106,7 @@ if "classification_result" not in st.session_state:
             max_upload_size=200,
             label_visibility="collapsed")
 
-        # 2. Show audio player if a file is uploaded (Upload done)
+        # Show audio player if a file is uploaded (Upload done)
         if audio_file is not None:
             st.audio(audio_file, format=f'audio/{audio_file.type.split("/")[-1]}')
 
@@ -120,7 +120,7 @@ if "classification_result" not in st.session_state:
             )
 
     
-        # --- 3. Analyzing Audio File and Detecting Cracks
+        # Analyzing Audio File and Detecting Cracks
         if detect_button:
             if audio_file:
                 with st.spinner("Analysing audio for cracks...", show_time=True):
