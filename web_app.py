@@ -74,11 +74,35 @@ st.markdown("""
 @st.dialog("Results")
 def show_result(res):
     st.write(f"Audio File: {audio_file.name}")
-    st.markdown(f" ### Egg Classification: {res} ", unsafe_allow_html=True)
-    if st.button("Done", use_container_width=True):
+
+    # Color based on results
+    color = "#FF4B4B" if res == "CRACKED" else "#2ECC71"
+
+    st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <h3>Egg Classification:</h3>
+                <h1 style="color: {color}; margin-bottom: 10;">{res}</h1>  
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    
+    done_button = tw_wrap(st.button)(
+        "Done",
+        key="done_action",
+        use_container_width=True,
+        classes="w-fit mx-auto block bg-[#3772a5] text-white border-black px-6"
+    )
+
+    if done_button:
+        # To clear the result from state and refresh to start over
         if "classification_result" in st.session_state:
             del st.session_state.classification_result
         st.rerun()
+        
+
+ # if st.button("Done", use_container_width=True):
 
 
 # --- Setup & UI
@@ -118,7 +142,6 @@ if "classification_result" not in st.session_state:
             key="detect_action",
             classes="w-fit mx-auto block bg-[#7bc040] text-white rounded-full border-1 border-black px-6"
             )
-
     
         # Analyzing Audio File and Detecting Cracks
         if detect_button:
