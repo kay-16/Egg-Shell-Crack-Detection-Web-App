@@ -110,25 +110,27 @@ def show_result(res):
 tw.initialize_tailwind()
 
 if "classification_result" not in st.session_state:
+    # # Main Container (black border)
+    # main_container = tw_wrap(st.container)(
+    #     classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
+    # )
 
-    # Main Container (black border)
-    main_container = tw_wrap(st.container)(
-        key="main-container",
-        classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
-    )
-
-    # Upload audio container
-    audio_container = tw_wrap(st.container)(
-        key="audio-container",
-        classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
-    )
+    # # Upload audio container
+    # audio_container = tw_wrap(st.container)(
+    #     key="audio-container",
+    #     classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
+    # )
 
     
     with st.container(border=True, width=1000, height=400):
-    
+    # with tw_wrap(st.container)(
+    #     key="main-container",
+    #     classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
+    # ):
         st.write("CNN-based EggCrack Detection")
-
         col_left, col_right = st.columns([3,2])
+
+        # LEFT SIDE OF THE CONTAINER (upload area)
         with col_left:
 
              with st.container(border=True, width=500, height=300):
@@ -148,18 +150,20 @@ if "classification_result" not in st.session_state:
                 if audio_file is not None:
                     st.audio(audio_file, format=f'audio/{audio_file.type.split("/")[-1]}')
 
-        
+        # RIGHT SIDE OF THE CONTAINER (radio buttons)
         with col_right:
+            # RADIO BUTTONS
+            st.write("**Please select a model:**")
             model_selected = st.radio(
-                "Please select a model",
+                "Model Selection",
                 ["Best Model 1", "Best Model 2", "Best Model 3", "Best Model 4", "Best Model 5"],
                 index=None
             )
-            
-            st.write("You selected:", model_selected)
+            if model_selected:
+                st.write("You selected:", model_selected)
 
 
-            # Detect Button 
+            # DETECT BUTTON
             detect_button = tw_wrap(st.button)(
                 "Detect Cracks", 
                 key="detect_action",
@@ -182,4 +186,3 @@ if "classification_result" not in st.session_state:
                     st.warning("Choose an audio file to detect", icon="⚠️")
 
     
-
