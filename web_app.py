@@ -122,7 +122,7 @@ if "classification_result" not in st.session_state:
     # )
 
     
-    with st.container(border=True, width=1000, height=400):
+    with st.container(border=True, width=1000, height=460):
     # with tw_wrap(st.container)(
     #     key="main-container",
     #     classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
@@ -152,16 +152,14 @@ if "classification_result" not in st.session_state:
 
         # RIGHT SIDE OF THE CONTAINER (radio buttons)
         with col_right:
+            
             # RADIO BUTTONS
             st.write("**Please select a model:**")
-            model_selected = st.radio(
+            model_selected_btn = st.radio(
                 "Model Selection",
                 ["Best Model 1", "Best Model 2", "Best Model 3", "Best Model 4", "Best Model 5"],
                 index=None
             )
-            if model_selected:
-                st.write("You selected:", model_selected)
-
 
             # DETECT BUTTON
             detect_button = tw_wrap(st.button)(
@@ -169,10 +167,19 @@ if "classification_result" not in st.session_state:
                 key="detect_action",
                 classes="w-fit mx-auto block bg-[#7bc040] text-white rounded-full border-1 border-black px-6"
                 )
+            
+            # Check if button was clicked
+            if detect_button: 
+                # if no file upload
+                if not audio_file:
+                    st.warning("Choose an audio file to detect", icon="⚠️")
 
-            # Analyzing Audio File and Detecting Cracks
-            if detect_button:
-                if audio_file:
+                # if no model selected
+                elif model_selected_btn is None:
+                    st.warning("Choose a model before proceeding", icon="⚠️")
+
+                # if file upload and model are selected, proceed with detection
+                else: 
                     with st.spinner("Analysing audio for cracks...", show_time=True):
                         time.sleep(2)
                         prediction_result  ="CRACKED" # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
@@ -182,7 +189,6 @@ if "classification_result" not in st.session_state:
                     # st.session_state.classification_result = result
                     # st.info("Analysing audio for cracks...") # Call CNN model here for later
 
-                else:
-                    st.warning("Choose an audio file to detect", icon="⚠️")
-
-    
+            
+                
+            
