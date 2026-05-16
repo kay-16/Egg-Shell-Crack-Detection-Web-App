@@ -84,6 +84,27 @@ st.markdown("""
             display: none !important;
         }
             
+        /*Custom styling for Detect Cracks button*/
+        button:has(div[data-testid="stMarkdownContainer"] p:contains("Detect Cracks")) {
+            background-color: #7bc040 !important;
+            color: white !important;
+            border-radius: 9999px !important; /* Rounded-full */
+            border: 1px solid black !important;
+            padding: 10px 24px !important;
+            font-weight: bold !important;
+            width: fit-content !important;
+            margin: 0 auto !important;
+            display: block !important;
+        }
+
+        # /* Hover effect for Detect Cracks button*/
+        # button:hover {
+        #     background-color: #6aaa35 !important;
+        #     border-color: black !important;
+        # }
+
+        
+            
     </style>
 """, unsafe_allow_html=True)
 
@@ -141,7 +162,7 @@ if "classification_result" not in st.session_state:
     # )
 
     
-    with st.container(border=True, width=1000, height=430):
+    with st.container(border=True, width=650, height=430):
         st.write("CNN-based EggCrack Detection")
         col_left, col_right = st.columns([3,2])
 
@@ -191,9 +212,8 @@ if "classification_result" not in st.session_state:
             # DETECT BUTTON
             detect_button = tw_wrap(st.button)(
                 "Detect Cracks", 
-                key="detect_action",
-                classes="w-fit mx-auto block bg-[#7bc040] text-white rounded-full border-1 border-black px-6"
-                )
+                key="detect_action"
+            )
             
             # Check if button was clicked
             if detect_button: 
