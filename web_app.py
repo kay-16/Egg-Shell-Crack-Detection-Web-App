@@ -39,7 +39,7 @@ st.markdown("""
             margin: 0 auto !important;
         }
             
-        /* Custom audio file upload button */
+        /* Custom audio file UPLOAD button */
         [data-testid="stFileUploaderDropzone"] button {
             background-color: #3772a5 !important;
             color: white !important;
@@ -48,16 +48,35 @@ st.markdown("""
             margin: 0 auto !important;
             display: block !important;
             font-size: 0 !important; 
-            line-height: 0 !important;
         }
-        
+            
         /* Custom button label */
         [data-testid="stFileUploaderDropzone"] button::after {
-            content: "Upload Audio File" !important;
+            content: "Upload audio file" !important;
             display: block !important;
             font-size: 16px !important; 
             line-height: normal !important;
             color: white !important;
+        }
+        
+        # /*State 1: Initial Upload */
+        # .upload-view [data-testid="stFileUploaderDropzone"] button::after {
+        #     content: "Upload audio file" !important;
+        #     font-size: 16px !important;
+        #     display: block !important;
+        # }
+
+        # /*State 2: New File Button */
+        # .new-upload-view [data-testid="stFileUploaderDropzone"] button::after {
+        #     content: "New audio file" !important;
+        #     font-size: 14px !important;
+        #     display: block !important;
+        # }
+
+        /*Small UI cleanup for the dropzone */
+        [data-testid="stFileUploaderDropzone"] {
+            border: none !important;
+            background-color: transparent !important;
         }
 
         /* Ensuring no other spans inside the button show up */
@@ -122,35 +141,43 @@ if "classification_result" not in st.session_state:
     # )
 
     
-    with st.container(border=True, width=1000, height=460):
-    # with tw_wrap(st.container)(
-    #     key="main-container",
-    #     classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
-    # ):
+    with st.container(border=True, width=1000, height=430):
         st.write("CNN-based EggCrack Detection")
         col_left, col_right = st.columns([3,2])
 
         # LEFT SIDE OF THE CONTAINER (upload area)
         with col_left:
+             with st.container(border=True, width=500, height=260):
+                # Placeholders
+                image_spot = st.empty()
+                text_spot = st.empty()
 
-             with st.container(border=True, width=500, height=300):
-                
-                # Mic Image
-                st.image("assets/mic_plus.svg", width=45)
+                # Call the uploader (define 'audio_file')
+                audio_file = tw_wrap(st.file_uploader)(
+                    "uploader",
+                    type=["mp3","wav","ogg"],
+                    label_visibility="collapsed"
+                )
 
                 # Upload file (Uploader)
-                audio_file = st.file_uploader(
-                    "Upload Audio File",
-                    type=["mp3","wav","ogg"], 
-                    width=300, 
-                    max_upload_size=200,
-                    label_visibility="collapsed")
+                if audio_file is None:
+                    with image_spot.container():
+                        sub1, sub2, sub3 = st.columns([2, 2, 1])
+                        # Mic Image
+                        sub2.image("assets/mic_plus.svg", width=60)
+                else:
+                    with image_spot.container():
+                        sub1, sub2, sub3 = st.columns([2, 4, 1])
+                        # Show audio player if a file is uploaded
+                        sub2.image("assets/waveform.svg", width=180)
+                        text_spot.markdown(f"<p style='text-align:center; color:#3772a5;'>{audio_file.name}</p>", unsafe_allow_html=True)
 
                 # Show audio player if a file is uploaded (Upload done)
                 if audio_file is not None:
-                    st.audio(audio_file, format=f'audio/{audio_file.type.split("/")[-1]}')
+                    st.audio(audio_file)
+                    
 
-        # RIGHT SIDE OF THE CONTAINER (radio buttons)
+        # RIGHT SIDE OF THE CONTAINER (radio buttons, detect button)
         with col_right:
             
             # RADIO BUTTONS
@@ -182,7 +209,7 @@ if "classification_result" not in st.session_state:
                 else: 
                     with st.spinner("Analysing audio for cracks...", show_time=True):
                         time.sleep(2)
-                        prediction_result  ="CRACKED" # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
+                        prediction_result="CRACKED" # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
                     st.success("Detection Done!")
                     st.session_state.classification_result = prediction_result
                     show_result(prediction_result)
@@ -192,3 +219,12 @@ if "classification_result" not in st.session_state:
             
                 
             
+
+# /* Custom button label */
+#         [data-testid="stFileUploaderDropzone"] button::after {
+#             content: "Upload Audio File" !important;
+#             display: block !important;
+#             font-size: 16px !important; 
+#             line-height: normal !important;
+#             color: white !important;
+#         }
