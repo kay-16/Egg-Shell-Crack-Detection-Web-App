@@ -3,15 +3,15 @@ import pandas as pd
 import st_tailwind as tw
 from st_tailwind import tw_wrap
 import time
+from src.inference_logic import preprocess_audio, get_model, get_prediction
 
 MODEL_PATHS = {
-    "Best Model 1:" "models/regnet_y_800mf_audio_spec_best_model.pth",
-    "Best Model 2:" "models/regnet_y_800mf_spec_best_model.pth",
-    "Best Model 3:" "models/efficient_b0_all_best_model.pth",
-    "Best Model 4:" "models/efficient_b0_audio_best_model.pth",
-    "Best Model 5:" "models/mobilenet_v3_hybrid_best_model.pth"
+    "Best Model 1" : "models/regnet_y_800mf_audio_spec_best_model.pth",
+    "Best Model 2" : "models/regnet_y_800mf_spec_best_model.pth",
+    "Best Model 3" : "models/efficientnet_b0_all_best_model.pth",
+    "Best Model 4" : "models/efficientnet_b0_audio_best_model.pth",
+    "Best Model 5" : "models/mobilenet_v3_hybrid_best_model.pth"
 }
-
 
 # Removes some audio upload elements (UI-related)
 st.markdown("""
@@ -236,12 +236,22 @@ if "classification_result" not in st.session_state:
 
                 # if file upload and model are selected, proceed with detection
                 else: 
-                    with st.spinner("Analysing audio for cracks...", show_time=True):
-                        time.sleep(2)
-                        prediction_result="CRACKED" # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
-                    st.success("Detection Done!")
-                    st.session_state.classification_result = prediction_result
-                    show_result(prediction_result)
+                    with st.spinner("Analysing audio for cracks {model_selected_btn}...", show_time=True):
+                        # Get the file path from the mapping dictionary
+                        selected_path = MODEL_PATHS[model_selected_btn]
+
+                        # Preprocess the uploaded audio
+                        processed_data = preprocess_audio(audio_file)
+
+                        # Run the actual model and get results
+                        try:
+                            prediction_result=get_prediction(selected_path, processed_data, selected_path) # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
+                            st.success("Detection Done!")
+                            st.session_state.classification_result = prediction_result
+                            show_result(prediction_result)
+                        except Exception as e:
+                            st.error(f"Error loading model: {e}")
+
                     # st.session_state.classification_result = result
                     # st.info("Analysing audio for cracks...") # Call CNN model here for later
 
