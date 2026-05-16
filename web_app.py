@@ -4,6 +4,15 @@ import st_tailwind as tw
 from st_tailwind import tw_wrap
 import time
 
+MODEL_PATHS = {
+    "Best Model 1:" "models/regnet_y_800mf_audio_spec_best_model.pth",
+    "Best Model 2:" "models/regnet_y_800mf_spec_best_model.pth",
+    "Best Model 3:" "models/efficient_b0_all_best_model.pth",
+    "Best Model 4:" "models/efficient_b0_audio_best_model.pth",
+    "Best Model 5:" "models/mobilenet_v3_hybrid_best_model.pth"
+}
+
+
 # Removes some audio upload elements (UI-related)
 st.markdown("""
     <style>
