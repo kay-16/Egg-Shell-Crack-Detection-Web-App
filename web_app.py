@@ -2,53 +2,43 @@ import streamlit as st
 import pandas as pd
 import st_tailwind as tw
 from st_tailwind import tw_wrap
+from pathlib import Path
 import time
-from src.inference_logic import preprocess_audio, get_model, get_prediction
+from src.inference_logic import preprocess_audio, get_prediction
+from src.preprocessing import prepare_audio
+from src.visualize_lms import visualize_npy_spectrogram
 
 MODEL_PATHS = {
-    "Best Model 1" : "models/regnet_y_800mf_audio_spec_best_model.pth",
-    "Best Model 2" : "models/regnet_y_800mf_spec_best_model.pth",
-    "Best Model 3" : "models/efficientnet_b0_all_best_model.pth",
-    "Best Model 4" : "models/efficientnet_b0_audio_best_model.pth",
-    "Best Model 5" : "models/mobilenet_v3_hybrid_best_model.pth"
+    "efficientnet_b0_audio_spec" : "models/efficientnet_b0_audio_spec_best_model.pth",
+    "mobilenet_v3_audio" : "models/mobilenet_v3_audio_best_model.pth",
+    "regnet_y_800mf_audio_spec" : "models/regnet_y_800mf_audio_spec_best_model.pth",
+    "regnet_y_800mf_spec" : "models/regnet_y_800mf_spec_best_model.pth",
+    "shufflenet_v2_audio_spec" : "models/shufflenet_v2_audio_spec_best_model.pth",
+    "shufflenet_v2_spec" : "models/shufflenet_v2_spec_best_model.pth"
 }
 
 # Removes some audio upload elements (UI-related)
 st.markdown("""
     <style>
-        /* Hides the 'Drag and drop' text */
-        [data-testid="stFileUploaderDropzone"] div div {
-            display: none !important;
-        }
-        
-        /* Hides the 'Limit 200MB' text */
+        /* 1. Hide the default 'Drag and drop file here' text and layout metadata */
+        [data-testid="stFileUploaderDropzone"] > div > span,
+        [data-testid="stFileUploaderDropzone"] div div,
         [data-testid="stFileUploaderFileName"] {
             display: none !important;
         }
-            
-        /* Centers container of the button */
+        
+        /* 2. Configure the dropzone container layout */
         [data-testid="stFileUploaderDropzone"] {
             display: flex !important;
             justify-content: center !important;
             flex-direction: column !important;
             align-items: center !important;
             border: none !important;
-        }
-            
-        /* Removes the Gray Background and Border */
-        [data-testid="stFileUploaderDropzone"] {
             background-color: transparent !important;
-            border: none !important;
             padding: 0 !important;
         }
 
-        /* Ensures the 'Browse files' button itself is centered */
-        [data-testid="stFileUploaderDropzone"] button {
-            display: block !important;
-            margin: 0 auto !important;
-        }
-            
-        /* Custom audio file UPLOAD button */
+        /* 3. Style the upload button perfectly (handles both empty and uploaded states) */
         [data-testid="stFileUploaderDropzone"] button {
             background-color: #3772a5 !important;
             color: white !important;
@@ -56,10 +46,11 @@ st.markdown("""
             padding: 8px 20px !important;
             margin: 0 auto !important;
             display: block !important;
-            font-size: 0 !important; 
+            font-size: 0 !important; /* Hides default 'Browse files' text */
+            border-radius: 4px !important;
         }
             
-        /* Custom button label */
+        /* 4. Force our custom text onto the button face universally */
         [data-testid="stFileUploaderDropzone"] button::after {
             content: "Upload audio file" !important;
             display: block !important;
@@ -67,60 +58,36 @@ st.markdown("""
             line-height: normal !important;
             color: white !important;
         }
-        
-        # /*State 1: Initial Upload */
-        # .upload-view [data-testid="stFileUploaderDropzone"] button::after {
-        #     content: "Upload audio file" !important;
-        #     font-size: 16px !important;
-        #     display: block !important;
-        # }
 
-        # /*State 2: New File Button */
-        # .new-upload-view [data-testid="stFileUploaderDropzone"] button::after {
-        #     content: "New audio file" !important;
-        #     font-size: 14px !important;
-        #     display: block !important;
-        # }
-
-        /*Small UI cleanup for the dropzone */
-        [data-testid="stFileUploaderDropzone"] {
-            border: none !important;
-            background-color: transparent !important;
-        }
-
-        /* Ensuring no other spans inside the button show up */
+        /* 5. Hide the interior default text inside the button container */
         [data-testid="stFileUploaderDropzone"] button * {
             display: none !important;
         }
+
+        /* 6. Custom styling for the green Detect Cracks button */
+        div.stButton button {
+        background-color: #7bc040 !important;
+        color: white !important;
+        border-radius: 9999px !important; /* Rounded-full pill shape */
+        border: 1px solid black !important;
+        padding: 10px 24px !important;
+        font-weight: bold !important;
+        width: fit-content !important;
+        margin: 0 auto !important;
+        display: block !important;
+        }     
             
-        /*Custom styling for Detect Cracks button*/
-        button:has(div[data-testid="stMarkdownContainer"] p:contains("Detect Cracks")) {
-            background-color: #7bc040 !important;
-            color: white !important;
-            border-radius: 9999px !important; /* Rounded-full */
-            border: 1px solid black !important;
-            padding: 10px 24px !important;
-            font-weight: bold !important;
-            width: fit-content !important;
-            margin: 0 auto !important;
-            display: block !important;
+        /* 7. Force all native bordered containers to render a solid black outline */
+        div[data-testid="stContainer"] {
+            border: 1px solid #000000 !important;
         }
-
-        # /* Hover effect for Detect Cracks button*/
-        # button:hover {
-        #     background-color: #6aaa35 !important;
-        #     border-color: black !important;
-        # }
-
-        
-            
     </style>
 """, unsafe_allow_html=True)
 
 
 # --- Classification Result
 @st.dialog("Results")
-def show_result(res):
+def show_result(res, log_mel):
     st.write(f"Audio File: {audio_file.name}")
 
     # Color based on results
@@ -136,11 +103,15 @@ def show_result(res):
             unsafe_allow_html=True
         )
     
-    done_button = tw_wrap(st.button)(
+    # Render the Spectrogram inside the popup dialog
+    st.write('### Acoustic Signature Analysis')
+    visualize_npy_spectrogram(log_mel, audio_file.name)
+
+    done_button = st.button(
         "Done",
         key="done_action",
-        use_container_width=True,
-        classes="w-fit mx-auto block bg-[#3772a5] text-white border-black px-6"
+        use_container_width=True
+        # classes="w-fit mx-auto block bg-[#3772a5] text-white border-black px-6 mt-4"
     )
 
     if done_button:
@@ -150,8 +121,6 @@ def show_result(res):
         st.rerun()
         
 
- # if st.button("Done", use_container_width=True):
-
 
 # --- Setup & UI
 
@@ -159,31 +128,20 @@ def show_result(res):
 tw.initialize_tailwind()
 
 if "classification_result" not in st.session_state:
-    # # Main Container (black border)
-    # main_container = tw_wrap(st.container)(
-    #     classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
-    # )
-
-    # # Upload audio container
-    # audio_container = tw_wrap(st.container)(
-    #     key="audio-container",
-    #     classes="border-1 border-black p-10 flex flex-col items-center justify-center space-y-4"
-    # )
-
-    
-    with st.container(border=True, width=650, height=430):
+   
+     with st.container(border=True, width=680, height=430):
         st.write("CNN-based EggCrack Detection")
         col_left, col_right = st.columns([3,2])
 
         # LEFT SIDE OF THE CONTAINER (upload area)
         with col_left:
-             with st.container(border=True, width=500, height=260):
+            with st.container(border=True, width=500, height=260):
                 # Placeholders
                 image_spot = st.empty()
                 text_spot = st.empty()
 
                 # Call the uploader (define 'audio_file')
-                audio_file = tw_wrap(st.file_uploader)(
+                audio_file = st.file_uploader(
                     "uploader",
                     type=["mp3","wav","ogg"],
                     label_visibility="collapsed"
@@ -214,12 +172,17 @@ if "classification_result" not in st.session_state:
             st.write("**Please select a model:**")
             model_selected_btn = st.radio(
                 "Model Selection",
-                ["Best Model 1", "Best Model 2", "Best Model 3", "Best Model 4", "Best Model 5"],
+                ["efficientnet_b0_audio_spec", 
+                "mobilenet_v3_audio", 
+                "regnet_y_800mf_audio_spec", 
+                "regnet_y_800mf_spec", 
+                "shufflenet_v2_audio_spec", 
+                "shufflenet_v2_spec"],
                 index=None
             )
 
             # DETECT BUTTON
-            detect_button = tw_wrap(st.button)(
+            detect_button = st.button(
                 "Detect Cracks", 
                 key="detect_action"
             )
@@ -239,24 +202,36 @@ if "classification_result" not in st.session_state:
                     with st.spinner("Analysing audio for cracks {model_selected_btn}...", show_time=True):
                         # Get the file path from the mapping dictionary
                         selected_path = MODEL_PATHS[model_selected_btn]
+                        selected_model = selected_path.split("/")
+                        selected_model = selected_model[1].split('_') 
+
+                        selected_model = "_".join(selected_model[:2])
+
+                        if "regnet" in selected_path.lower(): model_key = "regnet_y"
+                        elif "efficientnet" in selected_path.lower(): model_key = "efficientnet_b0"
+                        elif "mobilenet" in selected_path.lower(): model_key = "mobilenet_v3"
+                        elif "shufflenet" in selected_path.lower(): model_key = "shufflenet_v2"
 
                         # Preprocess the uploaded audio
-                        processed_data = preprocess_audio(audio_file)
+                        processed_data, log_mel = preprocess_audio(audio_file)
 
                         # Run the actual model and get results
                         try:
-                            prediction_result=get_prediction(selected_path, processed_data, selected_path) # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
+                            prediction_result=get_prediction(selected_path, processed_data, model_key) # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
+
                             st.success("Detection Done!")
                             st.session_state.classification_result = prediction_result
-                            show_result(prediction_result)
-                        except Exception as e:
-                            st.error(f"Error loading model: {e}")
 
+                            # Pass both variables into the popup dialog
+                            show_result(prediction_result, log_mel)
+
+                        except Exception as e:
+                            st.error(f"Error loading model: {e},{selected_model}")
+                            
                     # st.session_state.classification_result = result
                     # st.info("Analysing audio for cracks...") # Call CNN model here for later
 
             
-                
             
 
 # /* Custom button label */

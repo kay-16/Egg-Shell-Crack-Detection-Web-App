@@ -4,6 +4,9 @@ numpy
 matplotlib
 seaborn
 plotly
+st_tailwind
+tensorflow
+
 
 # Optional: For any Excel file reading/writing
 openpyxl
