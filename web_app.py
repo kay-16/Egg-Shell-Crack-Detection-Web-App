@@ -6,7 +6,7 @@ from pathlib import Path
 import time
 from src.inference_logic import preprocess_audio, get_prediction
 from src.preprocessing import prepare_audio
-from src.visualize_lms import visualize_npy_spectrogram
+from src.visualize import visualize_npy_spectrogram
 
 MODEL_PATHS = {
     "efficientnet_b0_audio_spec" : "models/efficientnet_b0_audio_spec_best_model.pth",
@@ -199,7 +199,7 @@ if "classification_result" not in st.session_state:
 
                 # if file upload and model are selected, proceed with detection
                 else: 
-                    with st.spinner("Analysing audio for cracks {model_selected_btn}...", show_time=True):
+                    with st.spinner("Analysing audio for cracks...", show_time=True):
                         # Get the file path from the mapping dictionary
                         selected_path = MODEL_PATHS[model_selected_btn]
                         selected_model = selected_path.split("/")
@@ -219,10 +219,11 @@ if "classification_result" not in st.session_state:
                         try:
                             prediction_result=get_prediction(selected_path, processed_data, model_key) # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
 
+                            time.sleep(3)
                             st.success("Detection Done!")
                             st.session_state.classification_result = prediction_result
 
-                            # Pass both variables into the popup dialog
+                            # Pass both varia   bles into the popup dialog
                             show_result(prediction_result, log_mel)
 
                         except Exception as e:
