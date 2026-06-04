@@ -48,7 +48,7 @@ def preprocess_audio(audio_file):
     mel_spectrogram = librosa.feature.melspectrogram(
         y=y,
         sr=sr,
-        n_fft=2048,
+        n_fft=1024,
         hop_length=512,
         n_mels=128
     )
