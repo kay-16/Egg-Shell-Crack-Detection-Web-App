@@ -10,7 +10,7 @@ def prepare_audio(audio_file, target_sr=44100, target_size=(224, 224)):
 
     # Generate Mel Spectogram
     # Using 128 mel bins (standard); will resize to 224 later
-    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, n_fft=2048, hop_length=512)
+    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, n_fft=1024, hop_length=512)
 
     # Convert to Log Scale (decibels)
     S_db = librosa.power_to_db(S, ref=np.max)
