@@ -4,9 +4,11 @@ import st_tailwind as tw
 from st_tailwind import tw_wrap
 from pathlib import Path
 import time
+
 from src.inference_logic import preprocess_audio, get_prediction
 from src.preprocessing import prepare_audio
 from src.visualize import visualize_npy_spectrogram
+from src.hardware_control import trigger_hardware
 
 MODEL_PATHS = {
     "efficientnet_b0_audio_spec" : "models/efficientnet_b0_audio_spec_best_model.pth",
@@ -181,53 +183,56 @@ if "classification_result" not in st.session_state:
                 index=None
             )
 
-            # DETECT BUTTON
-            detect_button = st.button(
-                "Detect Cracks", 
-                key="detect_action"
+            hardware_btn = st.button(
+                "Tap",
+                key="auto_hardware_action"
             )
-            
-            # Check if button was clicked
-            if detect_button: 
-                # if no file upload
-                if not audio_file:
-                    st.warning("Choose an audio file to detect", icon="⚠️")
 
-                # if no model selected
-                elif model_selected_btn is None:
+            # DETECT BUTTON
+            # detect_button = st.button(
+            #     "Detect Cracks", 
+            #     key="detect_action"
+            # )
+            if hardware_btn:
+                # Check if button was clicked
+                if model_selected_btn is None: 
                     st.warning("Choose a model before proceeding", icon="⚠️")
+                    # if no model selected
+                   
 
-                # if file upload and model are selected, proceed with detection
+                    # if file upload and model are selected, proceed with detection
                 else: 
-                    with st.spinner("Analysing audio for cracks...", show_time=True):
+                    with st.spinner("Analysing Tapping... Recording Acoustic Response...", show_time=True):
                         # Get the file path from the mapping dictionary
-                        selected_path = MODEL_PATHS[model_selected_btn]
-                        selected_model = selected_path.split("/")
-                        selected_model = selected_model[1].split('_') 
-
-                        selected_model = "_".join(selected_model[:2])
-
-                        if "regnet" in selected_path.lower(): model_key = "regnet_y"
-                        elif "efficientnet" in selected_path.lower(): model_key = "efficientnet_b0"
-                        elif "mobilenet" in selected_path.lower(): model_key = "mobilenet_v3"
-                        elif "shufflenet" in selected_path.lower(): model_key = "shufflenet_v2"
-
-                        # Preprocess the uploaded audio
-                        processed_data, log_mel = preprocess_audio(audio_file)
-
-                        # Run the actual model and get results
+                        # selected_path = MODEL_PATHS[model_selected_btn]
+                        # selected_model = selected_path.split("/")
+                        # selected_model = selected_model[1].split('_') 
                         try:
-                            prediction_result=get_prediction(selected_path, processed_data, model_key) # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
+                            live_wav_file, log_mel_matrix = trigger_hardware()
+
+                            selected_path = "_".join(model_selected_btn)
+                            model_key = ""
+                            if "regnet" in selected_path.lower(): model_key = "regnet_y"
+                            elif "efficientnet" in selected_path.lower(): model_key = "efficientnet_b0"
+                            elif "mobilenet" in selected_path.lower(): model_key = "mobilenet_v3"
+                            elif "shufflenet" in selected_path.lower(): model_key = "shufflenet_v2"
+
+                            # Preprocess the uploaded audio
+                            processed_data, log_mel = preprocess_audio(live_wav_file)
+
+                            # Run the actual model and get results
+                            
+                            prediction_result = get_prediction(selected_path, processed_data, model_key) # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
 
                             time.sleep(3)
-                            st.success("Detection Done!")
+                            st.success("Analysis Complete!")
                             st.session_state.classification_result = prediction_result
 
                             # Pass both varia   bles into the popup dialog
                             show_result(prediction_result, log_mel)
 
                         except Exception as e:
-                            st.error(f"Error loading model: {e},{selected_model}")
+                            st.error(f"Error loading model: {e}")
                             
                     # st.session_state.classification_result = result
                     # st.info("Analysing audio for cracks...") # Call CNN model here for later
@@ -243,3 +248,8 @@ if "classification_result" not in st.session_state:
 #             line-height: normal !important;
 #             color: white !important;
 #         }
+
+
+# if no file upload
+    # if not audio_file:
+    #     st.warning("Choose an audio file to detect", icon="⚠️")
