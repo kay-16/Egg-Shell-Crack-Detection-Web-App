@@ -88,40 +88,51 @@ st.markdown("""
 
 
 # --- Classification Result
+# In your streamlit file:
+# --- Classification Result
 @st.dialog("Results")
-def show_result(res, log_mel):
-    st.write(f"Audio File: {audio_file.name}")
+def show_result(res, log_mel, recorded_file=None):
+    
+    # FIX: If we have an automated hardware file, extract its name. Otherwise use the uploader.
+    if recorded_file is not None:
+        # Path(recorded_file).name converts "folder/audio.wav" -> "audio.wav"
+        display_name = Path(recorded_file).name 
+        save_reference = recorded_file
+    else:
+        display_name = audio_file.name if audio_file is not None else "Live Recording"
+        save_reference = display_name
+
+    st.write(f"Audio Source: {display_name}")
 
     # Color based on results
     color = "#FF4B4B" if res == "CRACKED" else "#2ECC71"
 
     st.markdown(
-            f"""
-            <div style="text-align: center;">
-                <h3>Egg Classification:</h3>
-                <h1 style="color: {color}; margin-bottom: 10;">{res}</h1>  
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
+        f"""
+        <div style="text-align: center;">
+            <h3>Egg Classification:</h3>
+            <h1 style="color: {color}; margin-bottom: 10;">{res}</h1>  
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
     
-    # Render the Spectrogram inside the popup dialog
     st.write('### Acoustic Signature Analysis')
-    visualize_npy_spectrogram(log_mel, audio_file.name)
+    
+    # Pass the correct file reference so matplotlib saves the image with the correct name
+    fig = visualize_npy_spectrogram(log_mel, save_reference)
+    st.pyplot(fig)
 
     done_button = st.button(
         "Done",
         key="done_action",
         use_container_width=True
-        # classes="w-fit mx-auto block bg-[#3772a5] text-white border-black px-6 mt-4"
     )
 
     if done_button:
-        # To clear the result from state and refresh to start over
         if "classification_result" in st.session_state:
             del st.session_state.classification_result
         st.rerun()
-        
 
 
 # --- Setup & UI
@@ -208,32 +219,34 @@ if "classification_result" not in st.session_state:
                         # selected_model = selected_path.split("/")
                         # selected_model = selected_model[1].split('_') 
                         try:
+                            # 1. Trigger rig: live_wav_file will hold the path string (e.g., 'captured_audio.wav')
                             live_wav_file, log_mel_matrix = trigger_hardware()
 
-                            selected_path = "_".join(model_selected_btn)
+                            # 2. Get the correct model paths and keys
+                            selected_path = MODEL_PATHS[model_selected_btn] 
+                            
                             model_key = ""
-                            if "regnet" in selected_path.lower(): model_key = "regnet_y"
-                            elif "efficientnet" in selected_path.lower(): model_key = "efficientnet_b0"
-                            elif "mobilenet" in selected_path.lower(): model_key = "mobilenet_v3"
-                            elif "shufflenet" in selected_path.lower(): model_key = "shufflenet_v2"
+                            if "regnet" in model_selected_btn.lower(): model_key = "regnet_y"
+                            elif "efficientnet" in model_selected_btn.lower(): model_key = "efficientnet_b0"
+                            elif "mobilenet" in model_selected_btn.lower(): model_key = "mobilenet_v3"
+                            elif "shufflenet" in model_selected_btn.lower(): model_key = "shufflenet_v2"
 
-                            # Preprocess the uploaded audio
+                            # 3. Preprocess the newly recorded hardware audio file
                             processed_data, log_mel = preprocess_audio(live_wav_file)
 
-                            # Run the actual model and get results
-                            
-                            prediction_result = get_prediction(selected_path, processed_data, model_key) # PUT ACTUAL MODEL OUTPUT HERE (cracked/uncracked)
+                            # 4. Run inference
+                            prediction_result = get_prediction(selected_path, processed_data, model_key)
 
                             time.sleep(3)
                             st.success("Analysis Complete!")
                             st.session_state.classification_result = prediction_result
 
-                            # Pass both varia   bles into the popup dialog
-                            show_result(prediction_result, log_mel)
+                            # 5. FIX: Pass the actual recorded file path straight to the dialog window
+                            show_result(prediction_result, log_mel, recorded_file=live_wav_file)
 
                         except Exception as e:
                             st.error(f"Error loading model: {e}")
-                            
+                                                    
                     # st.session_state.classification_result = result
                     # st.info("Analysing audio for cracks...") # Call CNN model here for later
 

@@ -11,21 +11,16 @@ from . import filename_utils
 
 # Auto-detect operating system to set correct port
 if os.name == 'nt':
-    TARGET_PORT = 'COM3' # change to actual port later
+    TARGET_PORT = 'COM3' 
 else:
     TARGET_PORT = '/dev/cu.usbmodemFX2348N1'
 
-arduino = serial.Serial(port=TARGET_PORT, baudrate=115200, timeout=.1) # /dev/cu.usbmodemFX2348N1
+# REMOVED global arduino = serial.Serial(...) definition from here!
 
-# mac port: /dev/cu.usbmodemFX2348N1
-
-def send_signal(signal):
-    # Send the signal to the Arduino, encoded as bytes
-    arduino.write(bytes(signal, 'utf-8'))
+def send_signal(ser, signal):
+    """Pass the active serial instance to write data safely"""
+    ser.write(bytes(signal, 'utf-8'))
     time.sleep(0.05) # Small delay for stability
-
-# Wait briefly for the serial connection to establish
-time.sleep(2) 
 
 def trigger_hardware():
     # PyAudio audio streaming parameter definitions
@@ -33,17 +28,10 @@ def trigger_hardware():
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 44100
-    RECORD_SECONDS =1.5
-
-
+    RECORD_SECONDS = 1.5
 
     # FILENAMES + METADATA FOR CSV
-    WAVE_OUTPUT_FILENAME = "egg100-5-cracked-1-p4-sv0.wav" # only edit this !!!! egg(ikapila)-(fold 1-5)-(uncracked|cracked)-(target 0/1)-p(1-4))-sv(0-2)
-
-    # Target: 0 - uncracked | 1 - cracked
-    # sv(serverity): 0 - uncracked | 1- cracked | 2 - microcrack
-    # fold: default 1 to 5, then back to 1
-
+    WAVE_OUTPUT_FILENAME = "egg100-5-cracked-1-p4-sv0.wav" 
 
     CLEANED_WAV_FILENAME = filename_utils.get_cleaned_filename(WAVE_OUTPUT_FILENAME)
     CLEANED_NPY_FILENAME = filename_utils.get_npy_filename(CLEANED_WAV_FILENAME)
@@ -52,26 +40,34 @@ def trigger_hardware():
     p = pyaudio.PyAudio()
     stream = None
     wf = None
+    arduino = None
 
     try:
-        # Open audio stream
-        send_signal('f')
+        # 1. Open the serial connection dynamic-on-demand
+        print(f"Opening connection to Arduino on {TARGET_PORT}...")
+        arduino = serial.Serial(port=TARGET_PORT, baudrate=115200, timeout=.1)
+        time.sleep(2) # Wait briefly for the connection to fully establish
+
+        # 2. Alert Arduino to prepare
+        send_signal(arduino, 'f')
         time.sleep(4)
+
+        # Open audio stream
         stream = p.open(format=FORMAT,
                         channels=CHANNELS,
                         rate=RATE,
                         input=True,
-                        frames_per_buffer=CHUNK,
-                        input_device_index=2)  # Use connected microphone
+                        frames_per_buffer=CHUNK,)  # Use connected microphone
 
         print("* Recording started...")
         print(f"  Duration: {RECORD_SECONDS} seconds")
         frames = []
 
-        # Send the signal to execute the function
+        # 3. FIX: Actually send the 's' signal to drop the physical tapper!
         print("Sending signal 's' to Arduino...")
+        send_signal(arduino, 's')
 
-        # Record audio
+        # Record audio response
         for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
             try:
                 data = stream.read(CHUNK, exception_on_overflow=False)
@@ -80,9 +76,6 @@ def trigger_hardware():
                 print(f"Warning: Buffer overflow - continuing...")
                 continue
 
-    
-        # print("Signal sent.") # Wait to ensure the signal is processed
-        # arduino.close()
         print("* Recording complete")
         
         # Save the recorded audio file
@@ -92,54 +85,29 @@ def trigger_hardware():
             wf.setsampwidth(p.get_sample_size(FORMAT))
             wf.setframerate(RATE)
             wf.writeframes(b''.join(frames))
-
-            if wf is not None:
-                try:
-                    wf.close()
-                except:
-                    pass
+            wf.close()
             
-            # log metadat to csv file
+            # Log metadata to csv file
             logger.log_egg_data(METADATA, WAVE_OUTPUT_FILENAME)
                 
-            # Calculate file info
-            # duration = len(frames) * CHUNK / RATE
-            # import os
-            # file_size = os.path.getsize(WAVE_OUTPUT_FILENAME) / 1024  # KB
-
-            # filtering.py logic
+            # Filtering logic
             clean_file = CLEANED_WAV_FILENAME
-            # time.sleep(5)
             filtering.run_filtering(WAVE_OUTPUT_FILENAME, clean_file)
 
-
-            # visualize_lms.py logic
+            # Visualize log-mel matrix
             npy_file = CLEANED_NPY_FILENAME
             log_mel, sr = visualize_lms.convert_audio_to_logmel_npy(clean_file, npy_file)
+            
+            # NOTE: If visualize_lms uses plt.show(), it might throw warnings in Streamlit backend. 
+            # But it saves clean_file data correctly for processing.
             visualize_lms.visualize_npy_spectrogram(log_mel, filename=WAVE_OUTPUT_FILENAME, sr=sr)
 
             return clean_file, log_mel
         else:
             raise Exception("No audio data recorded")
 
-        #     print(f"Saved to {WAVE_OUTPUT_FILENAME}")
-        #     print(f"Duration: {duration:.1f} seconds")
-        #     print(f"Size: {file_size:.1f} KB")
-        # else:
-        #     print("✗ No audio data recorded")
-
-
-
-    # except IOError as e:
-    #     print(f"✗ Recording failed: {e}")
-    #     print("Check that your microphone is connected and not in use.")
-    # except KeyboardInterrupt:
-    #     print("\n✗ Recording interrupted by user")
-    # except Exception as e:
-    #     print(f"✗ Unexpected error: {e}")
-        
     finally:
-        # Cleanup stream
+        # Cleanup audio stream safely
         if stream is not None:
             try:
                 if stream.is_active():
@@ -148,10 +116,16 @@ def trigger_hardware():
             except:
                 pass
         
-        # Cleanup PyAudio
         if p is not None:
             try:
                 p.terminate()
             except:
                 pass
-        
+
+        # 4. CRITICAL: Close the Serial port resource cleanly so it can be re-opened on next tap
+        if arduino is not None and arduino.is_open:
+            try:
+                arduino.close()
+                print("Serial connection closed cleanly.")
+            except:
+                pass
