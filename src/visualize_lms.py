@@ -1,4 +1,5 @@
 import librosa
+import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -33,27 +34,26 @@ def convert_audio_to_logmel_npy(audio_path, npy_output_path):
 def visualize_npy_spectrogram(log_mel_spectrogram, filename, sr=44100, hop_length=512): 
     name = Path(filename).stem  
     
-    # Explicitly capture the figure object
-    fig = plt.figure(figsize=(10, 4))
+    # Explicitly capture the figure object and axis bounds containers
+    fig, ax = plt.subplots(figsize=(10, 4))
     
-    librosa.display.specshow(
+    # Bind specshow directly to the local axis 
+    img = librosa.display.specshow(
         log_mel_spectrogram, 
         sr=sr, 
         hop_length=hop_length, 
         x_axis='time', 
-        y_axis='mel'
+        y_axis='mel',
+        ax=ax
     )
     
-    plt.colorbar(format='%+2.0f dB')
-    plt.title('Log-Mel Spectrogram')
+    # Route colorbar and titles through the local objects
+    fig.colorbar(img, ax=ax, format='%+2.0f dB')
+    ax.set_title(f'Log-Mel Spectrogram: {name}')
     plt.tight_layout()
+        
+    # Save the file using the figure object
+    fig.savefig(f'{name}.png')
     
-    # Save the file (Optional, but kept since it was in your original code)
-    plt.savefig(f'{name}.png')
-    
-    # REMOVE: plt.show()
-    # ADD: Return the figure object so Streamlit can render it
+    # Return figure object back to app workflow
     return fig
-
-# log_mel, sr = convert_audio_to_logmel_npy('UNCRACKED/04-10-26/egg39-1-uncracked-0-p4-sv0-cleaned.wav','cleaned_test.npy')
-# print(sr)
