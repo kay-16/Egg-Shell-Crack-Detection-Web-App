@@ -7,7 +7,7 @@ import time
 
 from src.inference_logic import preprocess_audio, get_prediction
 from src.preprocessing import prepare_audio
-from src.visualize import visualize_npy_spectrogram
+from src.visualize_lms import visualize_npy_spectrogram
 from src.hardware_control import trigger_hardware
 
 MODEL_PATHS = {
@@ -247,22 +247,7 @@ if "classification_result" not in st.session_state:
                         except Exception as e:
                             st.error(f"Error loading model: {e}")
                                                     
-                    # st.session_state.classification_result = result
-                    # st.info("Analysing audio for cracks...") # Call CNN model here for later
-
             
-            
-
-# /* Custom button label */
-#         [data-testid="stFileUploaderDropzone"] button::after {
-#             content: "Upload Audio File" !important;
-#             display: block !important;
-#             font-size: 16px !important; 
-#             line-height: normal !important;
-#             color: white !important;
-#         }
-
-
 # if no file upload
     # if not audio_file:
     #     st.warning("Choose an audio file to detect", icon="⚠️")
