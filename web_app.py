@@ -189,10 +189,10 @@ if "classification_result" not in st.session_state:
             )
 
             # DETECT BUTTON
-            # detect_button = st.button(
-            #     "Detect Cracks", 
-            #     key="detect_action"
-            # )
+            detect_button = st.button(
+                "Detect Cracks", 
+                key="detect_action"
+            )
             if hardware_btn:
                 # Check if button was clicked
                 if model_selected_btn is None: 
