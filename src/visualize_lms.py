@@ -28,9 +28,13 @@ def convert_audio_to_logmel_npy(audio_path, npy_output_path):
     return log_mel_spectrogram, sr
     
 
+# In your visualize python file:
+
 def visualize_npy_spectrogram(log_mel_spectrogram, filename, sr=44100, hop_length=512): 
     name = Path(filename).stem  
-    plt.figure(figsize=(10, 4))
+    
+    # Explicitly capture the figure object
+    fig = plt.figure(figsize=(10, 4))
     
     librosa.display.specshow(
         log_mel_spectrogram, 
@@ -43,8 +47,13 @@ def visualize_npy_spectrogram(log_mel_spectrogram, filename, sr=44100, hop_lengt
     plt.colorbar(format='%+2.0f dB')
     plt.title('Log-Mel Spectrogram')
     plt.tight_layout()
+    
+    # Save the file (Optional, but kept since it was in your original code)
     plt.savefig(f'{name}.png')
-    plt.show()
+    
+    # REMOVE: plt.show()
+    # ADD: Return the figure object so Streamlit can render it
+    return fig
 
 # log_mel, sr = convert_audio_to_logmel_npy('UNCRACKED/04-10-26/egg39-1-uncracked-0-p4-sv0-cleaned.wav','cleaned_test.npy')
 # print(sr)
